@@ -1,0 +1,26 @@
+# Git ignore file for clawbot-diary
+
+# API Keys and secrets
+*.env
+.env
+.env.local
+.env.*.local
+
+# Tavily API data files (contain API keys in requests)
+tavily_*.json
+
+# Shell scripts with hardcoded keys
+fetch-data.sh
+generate-diary.sh
+
+# Temporary files
+*.tmp
+*.temp
+*_output.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
