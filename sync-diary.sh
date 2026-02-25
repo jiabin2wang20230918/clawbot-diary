@@ -1,12 +1,13 @@
 #!/bin/bash
 # 日记自动同步脚本 - 将每日日记推送到 GitHub 仓库
+# 只同步按年月分类的日记文件，不同步 MEMORY.md
 
 set -e
 
 WORKSPACE="/home/bingo/.picoclaw/workspace"
 DIARY_SOURCE="$WORKSPACE/memory"
 DIARY_REPO="$WORKSPACE/clawbot-diary"
-LOG_FILE="$WORKSPACE/clawbot-diary/sync.log"
+LOG_FILE="$DIARY_REPO/sync.log"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -22,20 +23,24 @@ git pull origin main || true
 
 # 复制最新的日记文件（按年月分类）
 log "复制日记文件..."
-find "$DIARY_SOURCE" -name "*.md" -type f | while read -r file; do
-    filename=$(basename "$file")
-    # 跳过 MEMORY.md
-    if [ "$filename" != "MEMORY.md" ]; then
-        # 获取年月目录
-        year_month=$(dirname "$file" | xargs basename)
+find "$DIARY_SOURCE" -type d -name "20*" | while read -r month_dir; do
+    # 只处理年月目录（如 202602）
+    if [[ $(basename "$month_dir") =~ ^[0-9]{6}$ ]]; then
+        year_month=$(basename "$month_dir")
         target_dir="$DIARY_REPO/$year_month"
-        
-        # 创建年月目录（如果不存在）
         mkdir -p "$target_dir"
         
-        # 复制文件
-        cp "$file" "$target_dir/"
-        log "已复制：$year_month/$filename"
+        # 复制该月所有日记文件
+        for file in "$month_dir"/*.md; do
+            if [ -f "$file" ]; then
+                filename=$(basename "$file")
+                # 只复制日记文件（YYYYMMDD.md 格式），排除 MEMORY.md
+                if [[ "$filename" =~ ^[0-9]{8}\.md$ ]]; then
+                    cp "$file" "$target_dir/"
+                    log "已复制：$year_month/$filename"
+                fi
+            fi
+        done
     fi
 done
 
